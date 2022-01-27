@@ -1,4 +1,6 @@
 import { Vector2 } from "./pointsAngles"
+import { Rect } from "./shapes/rect"
+import { FillOptions } from "./shapes/shape"
 
 type PressedKeys = Map<string, boolean>
 type Events = (KeyDownEvent | KeyUpEvent | MouseMoveEvent | MouseDownEvent | MouseUpEvent)[]
@@ -39,12 +41,6 @@ function wait(time: number) {
     return new Promise<void>((resolve, _) => setTimeout(resolve, time))
 }
 
-interface Config {
-    fps?: number
-    width?: number
-    height?: number
-}
-
 class _CGame {
     static detectMobile() {
         const a = (navigator.userAgent || navigator.vendor || (<any>window).opera)
@@ -70,31 +66,20 @@ class _CGame {
 
     mouse: Vector2
 
-    constructor(private _startingScene: BaseScene, public ctx: CanvasRenderingContext2D, public config: Config) {
+    constructor(private _startingScene: typeof BaseScene, public ctx: CanvasRenderingContext2D, public fps: number, public width: number, public height: number) {
         this.mouse = { x: 0, y: 0 }
 
         /* -------------------------- Adjusting the canvas -------------------------- */
-        if (!config.width || !config.height) {
-            const resizeWindow = () => {
-                ctx.canvas.width = window.innerWidth
-                ctx.canvas.height = window.innerHeight
-            }
-
-            resizeWindow()
-            window.onresize = resizeWindow
-        } else {
-            ctx.canvas.width = config.width
-            ctx.canvas.height = config.height
-            // const resizeWindow = () => {
-            //     ctx.canvas.style.width = `${Math.min(window.innerWidth, window.innerHeight) - 20}px`
-            //     ctx.canvas.style.height = `${Math.min(window.innerWidth, window.innerHeight) - 20}px`
-            // }
-
-            // resizeWindow()
-            // window.onresize = resizeWindow
-
-            // TODO Finish this
+        ctx.canvas.width = width
+        ctx.canvas.height = height
+        const resizeWindow = () => {
+            const scale = Math.min(innerWidth / this.width, innerHeight / this.height)
+            ctx.canvas.style.width = `${this.width * scale}px`
+            ctx.canvas.style.height = `${this.height * scale}px`
         }
+
+        resizeWindow()
+        window.onresize = resizeWindow
 
         this.eventQueue = []
         this.pressedKeys = new Map()
@@ -140,7 +125,7 @@ class _CGame {
 
         let t = performance.now()
         let timeLastFrame = t
-        let scene = this._startingScene
+        let scene = new this._startingScene(this)
 
         while (scene !== null) {
             // Delta time
@@ -160,16 +145,31 @@ class _CGame {
 
             scene = scene.next // Set next scene
 
-            if (this.config?.fps) await wait(1000 / this.config.fps)
+            await wait(1000 / this.fps)
         }
+    }
+
+    applyFillOptions(fillOptions?: FillOptions) {
+        this.ctx.fillStyle = (fillOptions?.style) ? fillOptions.style : "#000000"
+        this.ctx.shadowBlur = (fillOptions?.shadowBlur) ? fillOptions.shadowBlur : 0
+        this.ctx.shadowColor = (fillOptions?.shadowColor) ? fillOptions.shadowColor : "#000000"
+        this.ctx.shadowOffsetX = (fillOptions?.shadowOffset?.x) ? fillOptions.shadowOffset.x : 0
+        this.ctx.shadowOffsetY = (fillOptions?.shadowOffset?.y) ? fillOptions.shadowOffset.y : 0
+    }
+
+    drawRect(rect: Rect) {
+        this.applyFillOptions(rect.style)
+        this.ctx.fillRect(rect.topLeft.x, rect.topLeft.y, rect.width, rect.height)
     }
 }
 
 class BaseScene {
     next: BaseScene
+    mouse: Vector2
 
-    constructor() {
+    constructor(public CGame: _CGame) {
         this.next = this
+        this.mouse = { x: 0, y: 0 }
     }
 
     /**
@@ -222,7 +222,6 @@ export {
     MouseMoveEvent,
     MouseUpEvent,
     Event,
-    Config,
     _CGame,
     wait,
     BaseScene

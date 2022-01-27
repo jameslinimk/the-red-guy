@@ -1,29 +1,22 @@
-import { CGame } from "../.."
 import { Vector2 } from "../pointsAngles"
-import { applyFillOptions, FillOptions } from "./shape"
+import { FillOptions } from "./shape"
 
 class Rect {
-    private _topLeft: Vector2
-    get topLeft() { return this._topLeft }
-    set topLeft(value: Vector2) {
-        this._topLeft = value
-        this._center = { x: value.x - this.width / 2, y: value.y - this.height / 2 }
+    get topLeft() {
+        return { x: this.center.x - this.width / 2, y: this.center.y - this.height / 2 }
     }
 
-    private _center: Vector2
-    get center() { return this._center }
-    set center(value: Vector2) {
-        this._center = value
-        this._topLeft = { x: value.x - this.width / 2, y: value.y - this.height / 2 }
-    }
-
-    constructor(center: Vector2, public width: number, public height: number, public style?: FillOptions) {
+    /* ------------------------------ Constructors ------------------------------ */
+    constructor(public center: Vector2, public width: number, public height: number, public style?: FillOptions) {
         this.center = center
     }
 
-    draw() {
-        applyFillOptions(this.style)
-        CGame.ctx.fillRect(this.topLeft.x, this.topLeft.y, this.width, this.height)
+    static topLeftConstructor(topLeft: Vector2, width: number, height: number, style?: FillOptions) {
+        return new Rect({ x: topLeft.x + width / 2, y: topLeft.y + height / 2 }, width, height, style)
+    }
+
+    static bottomRightConstructor(bottomRight: Vector2, width: number, height: number, style?: FillOptions) {
+        return new Rect({ x: bottomRight.x - width / 2, y: bottomRight.y - height / 2 }, width, height, style)
     }
 
     /* -------------------------------------------------------------------------- */
