@@ -1,0 +1,25 @@
+{
+  "name": "platformer",
+  "version": "1.0.0",
+  "description": "A very simple multiplayer platformer game",
+  "main": "index.js",
+  "scripts": {
+    "server": "node ./server/index",
+    "tscServer": "cd server & tsc",
+    "tsc": "cd website/ts & tsc",
+    "watch": "watchify ./website/ts/index.js -o ./website/ts/bundle.js",
+    "minify": "uglifyjs ./website/ts/bundle.js > ./website/ts/bundle.min.js",
+    "uglify": "uglifyjs ./website/ts/bundle.js > ./website/ts/bundle.min.js -m --mangle-props"
+  },
+  "author": "Linimik",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/node": "^17.0.12",
+    "nodemon": "^2.0.15",
+    "watchify": "^4.0.0"
+  }
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Platformer</title>
+    <!-- <meta content="Platformer" property="og:title" />
+    <meta
+        content="Work in progress"
+        property="og:description" />
+    <meta content="https://jameslinimk.github.io/the-blue-guy/website/" property="og:url" />
+    <meta content="https://jameslinimk.github.io/the-blue-guy/website/images/favicon.ico" property="og:image" />
+    <meta content="#e43b44" data-react-helmet="true" name="theme-color" /> -->
+
+    <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+    <script src="./ts/bundle.js" defer></script>
+    <style>
+        .centerChildren {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game {
+            cursor: none;
+            user-select: none;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
+    </style>
+</head>
+
+<body style="overflow: hidden">
+    <div class="centerChildren">
+        <canvas id="game" class="game"></canvas>
+    </div>
+    <!-- Below are sprites and sounds -->
+</body>
+
+</html>
