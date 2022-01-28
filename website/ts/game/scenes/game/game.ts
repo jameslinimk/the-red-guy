@@ -13,11 +13,14 @@ class GameScene extends BaseScene {
 
         /* ---------------------------- Objects / sprites --------------------------- */
         this.player = new Player(this)
-        this.walls = [new Wall(this, { x: this.CGame.width / 2, y: this.CGame.height - 100 }, 100, 50)]
+        this.walls = [
+            new Wall(this, { x: this.CGame.width / 2, y: this.CGame.height - 100 }, 100, 50),
+            new Wall(this, { x: this.CGame.width / 2 - 100, y: this.CGame.height - 150 }, 50, 100)
+        ]
     }
 
     processInput(events: Events, pressedKeys: PressedKeys, dt: number) {
-
+        this.player.processInput(events, pressedKeys, dt)
     }
 
     update(dt: number) {

@@ -88,7 +88,6 @@ class _CGame {
         /* ------------------------------- Key events ------------------------------- */
         document.onkeydown = (event) => {
             if (this.alreadyFired.get(event.code)) return
-
             this.alreadyFired.set(event.code, true)
             this.pressedKeys.set(event.code, true)
             this.eventQueue.push(<KeyDownEvent>{ eventType: "KeyDown", key: event.key, code: event.code, raw: event })
@@ -159,7 +158,7 @@ class _CGame {
 
     drawRect(rect: Rect) {
         this.applyFillOptions(rect.style)
-        this.ctx.fillRect(rect.topLeft.x, rect.topLeft.y, rect.width, rect.height)
+        this.ctx.fillRect(Math.round(rect.topLeft.x), Math.round(rect.topLeft.y), Math.round(rect.width), Math.round(rect.height))
     }
 }
 
