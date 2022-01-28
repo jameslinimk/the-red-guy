@@ -12,33 +12,42 @@ class Player {
     speed: number
 
     /* --------------------------------- Gravity -------------------------------- */
-    private touchingGroundRect: Rect
+    private _touchingGroundRect: Rect
     touchingGround: boolean
     gravitySpeed: number
-    gravityAcceleration: number
-    gravityTopSpeed: number
+    private _gravityAcceleration: number
+    private _gravityTopSpeed: number
+
+    /* --------------------------------- Jumping -------------------------------- */
+    jumping: boolean
+    private _jumpSpeed: number
+    private _jumpDuration: number
+    private _jumpedWhen: number
 
     constructor(public game: GameScene) {
         this.hspd = 0
         this.vspd = 0
+        this.hitbox = new Rect({ x: game.CGame.ctx.canvas.width / 2, y: 0 }, 25, 25)
+        this.image = new Rect(this.hitbox.center, this.hitbox.width, this.hitbox.height, { style: "#FF0000", shadowBlur: 5, shadowColor: "#000000" })
+        this._touchingGroundRect = new Rect({ x: this.hitbox.center.x, y: this.hitbox.topLeft.y + this.hitbox.height + 5 / 2 }, this.hitbox.width, 5)
 
         this.speed = 0.5
 
         this.touchingGround = false
         this.gravitySpeed = 0
-        this.gravityAcceleration = 0.7
-        this.gravityTopSpeed = 100
+        this._gravityAcceleration = 0.05
+        this._gravityTopSpeed = 100
 
-        this.hitbox = new Rect({ x: game.CGame.ctx.canvas.width / 2, y: game.CGame.ctx.canvas.height / 2 }, 50, 50)
-        this.image = new Rect(this.hitbox.center, 50, 50, { style: "#FF0000", shadowBlur: 5, shadowColor: "#000000" })
-
-        this.touchingGroundRect = new Rect({ x: this.hitbox.center.x, y: this.hitbox.topLeft.y + this.hitbox.height + 5 / 2 }, 50, 5)
+        this.jumping = false
+        this._jumpSpeed = 1.2
+        this._jumpDuration = 100
+        this._jumpedWhen = 0
     }
 
     processInput(events: Events, pressedKeys: PressedKeys, dt: number) {
         /* --------------------------------- Sprites -------------------------------- */
         this.image.center = this.hitbox.center
-        this.touchingGroundRect.center = { x: this.hitbox.center.x, y: this.hitbox.topLeft.y + this.hitbox.height + 5 / 2 }
+        this._touchingGroundRect.center = { x: this.hitbox.center.x, y: this.hitbox.topLeft.y + this.hitbox.height + 5 / 2 }
 
         /* -------------------------------- Velocity -------------------------------- */
         this.vspd = 0
@@ -51,7 +60,7 @@ class Player {
         /* --------------------------------- Gravity -------------------------------- */
         this.touchingGround = false
         for (const wall of this.game.walls) {
-            if (Rect.touches(wall.hitbox, this.touchingGroundRect)) {
+            if (Rect.touches(wall.hitbox, this._touchingGroundRect)) {
                 this.touchingGround = true
                 break
             }
@@ -59,16 +68,27 @@ class Player {
 
         /* --------------------------------- Jumping -------------------------------- */
         if (events.filter(event => event.eventType === "KeyDown" && (<KeyDownEvent>event).code === "Space").length > 0 && this.touchingGround) {
-            this.vspd -= 150
+            this.jumping = true
+            this._jumpedWhen = performance.now()
+        }
+
+        if (this.jumping) {
+            console.log("jumping")
+
+            this.vspd -= this._jumpSpeed * dt
+
+            if (performance.now() >= this._jumpedWhen + this._jumpDuration) {
+                this.jumping = false
+            }
         }
     }
 
     update(dt: number) {
         /* --------------------------------- Gravity -------------------------------- */
-        if (this.touchingGround) {
+        if (this.touchingGround || this.jumping) {
             this.gravitySpeed = 0
         } else {
-            this.gravitySpeed = Math.min(this.gravityTopSpeed, this.gravityAcceleration * dt)
+            this.gravitySpeed = Math.min(this._gravityTopSpeed, this.gravitySpeed + this._gravityAcceleration * dt)
             this.vspd += this.gravitySpeed
         }
 
