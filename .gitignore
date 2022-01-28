@@ -4,5 +4,5 @@ package-lock.json
 node_modules
 *.js
 *.js.map
-!website/js/bundle.js
-!website/js/bundle.min.js
+!website/ts/bundle.js
+!website/ts/bundle.min.js
