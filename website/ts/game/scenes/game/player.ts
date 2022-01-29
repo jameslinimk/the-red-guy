@@ -27,7 +27,7 @@ class Player {
     constructor(public game: GameScene) {
         this.hspd = 0
         this.vspd = 0
-        this.hitbox = new Rect({ x: game.CGame.ctx.canvas.width / 2, y: 0 }, 25, 25)
+        this.hitbox = new Rect(game.spawnLocation, 25, 25)
         this.image = new Rect(this.hitbox.center, this.hitbox.width, this.hitbox.height, { style: "#FF0000", shadowBlur: 5, shadowColor: "#000000" })
         this._touchingGroundRect = new Rect({ x: this.hitbox.center.x, y: this.hitbox.topLeft.y + this.hitbox.height + 5 / 2 }, this.hitbox.width, 5)
 

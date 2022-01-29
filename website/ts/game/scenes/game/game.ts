@@ -1,4 +1,5 @@
 import { BaseScene, Events, KeyDownEvent, PressedKeys, _CGame } from "../../../framework/framework"
+import { Vector2 } from "../../../framework/pointsAngles"
 import { Rect } from "../../../framework/shapes/rect"
 import { Client } from "./client"
 import { OtherPlayer } from "./otherPlayer"
@@ -14,10 +15,13 @@ class GameScene extends BaseScene {
     username?: string
     gameId?: string
 
+    spawnLocation: Vector2
+
     constructor(CGame: _CGame) {
         super(CGame)
         this.client = new Client(this)
-        this.client.createGame()
+
+        this.spawnLocation = { x: this.CGame.ctx.canvas.width / 2, y: 0 }
 
         /* ---------------------------- Objects / sprites --------------------------- */
         this.player = new Player(this)
@@ -37,6 +41,13 @@ class GameScene extends BaseScene {
                     event = <KeyDownEvent>event
                     switch (event.code) {
                         case "KeyJ":
+                            this.client.setUsername()
+                            break
+                        case "KeyK":
+                            this.client.join(prompt("server"))
+                            break
+                        case "KeyL":
+                            this.client.createGame()
                             break
                     }
                     break
@@ -53,6 +64,7 @@ class GameScene extends BaseScene {
         this.CGame.drawRect(Rect.topLeftConstructor({ x: 0, y: 0 }, this.CGame.width, this.CGame.height, { style: "#f5f5f5" }))
 
         this.player.draw()
+        Object.values(this.otherPlayers).forEach(otherPlayer => otherPlayer.draw())
         this.walls.forEach(wall => wall.draw())
     }
 }

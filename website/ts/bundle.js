@@ -6818,24 +6818,65 @@ exports.Rect = Rect;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Client = void 0;
 const socket_io_client_1 = require("socket.io-client");
+const otherPlayer_1 = require("./otherPlayer");
 class Client {
     game;
     io;
     constructor(game) {
         this.game = game;
         this.io = (0, socket_io_client_1.io)("http://localhost:3000");
+        this.io.on("playerJoin", (username) => {
+            game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(game, game.spawnLocation);
+        });
+        this.io.on("playerLeave", (username) => {
+            delete game.otherPlayers[username];
+        });
+        this.io.on("updatePositions", (positions) => {
+            for (const username in positions) {
+                if (username === game.username)
+                    continue;
+                if (!game.otherPlayers[username])
+                    game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(game, game.spawnLocation);
+                game.otherPlayers[username].image.center = positions[username].location;
+            }
+        });
+    }
+    setUsername() {
+        const username = prompt("username?");
+        this.io.emit("setUsername", username, (valid) => {
+            if (valid)
+                this.game.username = username;
+        });
     }
     createGame() {
         this.io.emit("create", (error, id) => {
             if (error)
                 return;
-            console.log(id);
+            this.game.gameId = id;
+        });
+    }
+    update(location) {
+        this.io.emit("move", location);
+    }
+    join(id) {
+        this.io.emit("join", id, (error, positions) => {
+            console.log(id, error, positions);
+            if (!error)
+                return;
+            this.game.gameId = id;
+            for (const username in positions) {
+                if (username === this.game.username)
+                    continue;
+                if (!this.game.otherPlayers[username])
+                    this.game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(this.game, this.game.spawnLocation);
+                this.game.otherPlayers[username].image.center = positions[username].location;
+            }
         });
     }
 }
 exports.Client = Client;
 
-},{"socket.io-client":29}],44:[function(require,module,exports){
+},{"./otherPlayer":45,"socket.io-client":29}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameScene = void 0;
@@ -6847,18 +6888,23 @@ const wall_1 = require("./wall");
 class GameScene extends framework_1.BaseScene {
     /* ---------------------------- Objects / sprites --------------------------- */
     player;
+    otherPlayers;
     walls;
     client;
+    username;
+    gameId;
+    spawnLocation;
     constructor(CGame) {
         super(CGame);
         this.client = new client_1.Client(this);
-        this.client.createGame();
+        this.spawnLocation = { x: this.CGame.ctx.canvas.width / 2, y: 0 };
         /* ---------------------------- Objects / sprites --------------------------- */
         this.player = new player_1.Player(this);
         this.walls = [
             new wall_1.Wall(this, { x: this.CGame.width / 2, y: this.CGame.height - 100 }, 100, 50),
             new wall_1.Wall(this, { x: this.CGame.width / 2 - 100, y: this.CGame.height - 150 }, 50, 100)
         ];
+        this.otherPlayers = {};
     }
     processInput(events, pressedKeys, dt) {
         this.player.processInput(events, pressedKeys, dt);
@@ -6868,6 +6914,13 @@ class GameScene extends framework_1.BaseScene {
                     event = event;
                     switch (event.code) {
                         case "KeyJ":
+                            this.client.setUsername();
+                            break;
+                        case "KeyK":
+                            this.client.join(prompt("server"));
+                            break;
+                        case "KeyL":
+                            this.client.createGame();
                             break;
                     }
                     break;
@@ -6881,12 +6934,31 @@ class GameScene extends framework_1.BaseScene {
     draw() {
         this.CGame.drawRect(rect_1.Rect.topLeftConstructor({ x: 0, y: 0 }, this.CGame.width, this.CGame.height, { style: "#f5f5f5" }));
         this.player.draw();
+        Object.values(this.otherPlayers).forEach(otherPlayer => otherPlayer.draw());
         this.walls.forEach(wall => wall.draw());
     }
 }
 exports.GameScene = GameScene;
 
-},{"../../../framework/framework":41,"../../../framework/shapes/rect":42,"./client":43,"./player":45,"./wall":46}],45:[function(require,module,exports){
+},{"../../../framework/framework":41,"../../../framework/shapes/rect":42,"./client":43,"./player":46,"./wall":47}],45:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OtherPlayer = void 0;
+const rect_1 = require("../../../framework/shapes/rect");
+class OtherPlayer {
+    game;
+    image;
+    constructor(game, location) {
+        this.game = game;
+        this.image = new rect_1.Rect(location, 25, 25, { style: "#00FF00", shadowBlur: 5, shadowColor: "#000000" });
+    }
+    draw() {
+        this.game.CGame.drawRect(this.image);
+    }
+}
+exports.OtherPlayer = OtherPlayer;
+
+},{"../../../framework/shapes/rect":42}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
@@ -6913,7 +6985,7 @@ class Player {
         this.game = game;
         this.hspd = 0;
         this.vspd = 0;
-        this.hitbox = new rect_1.Rect({ x: game.CGame.ctx.canvas.width / 2, y: 0 }, 25, 25);
+        this.hitbox = new rect_1.Rect(game.spawnLocation, 25, 25);
         this.image = new rect_1.Rect(this.hitbox.center, this.hitbox.width, this.hitbox.height, { style: "#FF0000", shadowBlur: 5, shadowColor: "#000000" });
         this._touchingGroundRect = new rect_1.Rect({ x: this.hitbox.center.x, y: this.hitbox.topLeft.y + this.hitbox.height + 5 / 2 }, this.hitbox.width, 5);
         this.speed = 0.5;
@@ -7000,6 +7072,7 @@ class Player {
             this.hitbox.center.x += this.hspd;
         if (!vTouches)
             this.hitbox.center.y += this.vspd;
+        this.game.client.update(this.hitbox.center);
     }
     draw() {
         this.game.CGame.drawRect(this.image);
@@ -7007,7 +7080,7 @@ class Player {
 }
 exports.Player = Player;
 
-},{"../../../framework/shapes/rect":42}],46:[function(require,module,exports){
+},{"../../../framework/shapes/rect":42}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Wall = void 0;
@@ -7036,7 +7109,7 @@ class Wall {
 }
 exports.Wall = Wall;
 
-},{"../../../framework/shapes/rect":42}],47:[function(require,module,exports){
+},{"../../../framework/shapes/rect":42}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const framework_1 = require("./framework/framework");
@@ -7048,4 +7121,4 @@ const CGame = new framework_1._CGame(game_1.GameScene, canvas.getContext("2d"), 
 // if (detectMobile()) alert("A mobile device has been (possibly) detected. This game requires a keyboard to move. Touch to shoot is available, but not recommended.")
 CGame.run();
 
-},{"./framework/framework":41,"./game/scenes/game/game":44}]},{},[47]);
+},{"./framework/framework":41,"./game/scenes/game/game":44}]},{},[48]);

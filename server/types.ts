@@ -9,7 +9,7 @@ interface ServerToClientEvents {
     playerLeave: (username: string) => void
 }
 interface ClientToServerEvents {
-    create: (callback: (error: boolean, id: string) => void) => void
+    create: (callback: (error: boolean, id?: string) => void) => void
     join: (gameId: string, callback: (error: boolean, positions?: { [key: string]: position }) => void) => void
     move: (location: Vector2) => void
     checkUsername: (username: string, callback: (valid: boolean) => void) => void

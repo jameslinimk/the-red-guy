@@ -91,6 +91,9 @@ io.on("connection", (socket) => {
     console.log("A user connected")
 
     socket.on("create", (callback) => {
+        const username = socketUsernames.get(socket.id)
+        if (!username) return callback(true)
+
         const id = generateId()
         games[id] = new Game(id)
         socket.join(id)
