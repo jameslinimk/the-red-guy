@@ -123,6 +123,8 @@ class Player {
         /* ---------------------------- Applying velocity --------------------------- */
         if (!hTouches) this.hitbox.center.x += this.hspd
         if (!vTouches) this.hitbox.center.y += this.vspd
+
+        this.game.client.update(this.hitbox.center)
     }
 
     draw() {

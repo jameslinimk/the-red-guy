@@ -4,7 +4,7 @@
   "description": "A very simple multiplayer platformer game",
   "main": "index.js",
   "scripts": {
-    "server": "node ./server/index",
+    "server": "nodemon ./server/index",
     "tscServer": "cd server & tsc",
     "tsc": "cd website/ts & tsc",
     "watch": "watchify ./website/ts/index.js -o ./website/ts/bundle.js",
@@ -14,11 +14,14 @@
   "author": "Linimik",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.2"
+    "express": "^4.17.2",
+    "socket.io": "^4.4.1",
+    "socket.io-client": "^4.4.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/node": "^17.0.12",
+    "chalk": "^5.0.0",
     "nodemon": "^2.0.15",
     "watchify": "^4.0.0"
   }
