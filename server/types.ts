@@ -5,12 +5,13 @@ interface position {
 }
 interface ServerToClientEvents {
     updatePositions: (positions: { [key: string]: position }) => void
+    playerMove: (username: string, position: position) => void
     playerJoin: (username: string) => void
     playerLeave: (username: string) => void
 }
 interface ClientToServerEvents {
-    create: (callback: (error: boolean, id?: string) => void) => void
-    join: (gameId: string, callback: (error: boolean, positions?: { [key: string]: position }) => void) => void
+    create: (location: Vector2, callback: (error: "No username" | "Already in game" | false, id?: string) => void) => void
+    join: (gameId: string, location: Vector2, callback: (error: "No username" | "Invalid game" | "Already in game" | "Already in this game" | false, positions?: { [key: string]: position }) => void) => void
     move: (location: Vector2) => void
     checkUsername: (username: string, callback: (valid: boolean) => void) => void
     setUsername: (username: string, callback: (valid: boolean) => void) => void

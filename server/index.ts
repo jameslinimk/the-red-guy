@@ -15,12 +15,13 @@ class Game {
         this.positions = {}
     }
 
-    add(socket: Socket, location: Vector2) {
+    add(socket: Socket<ServerToClientEvents, ClientToServerEvents>, location: Vector2) {
         const username = socketUsernames.get(socket.id)
         if (!username) return
         if (this.clients.has(socket.id)) return
 
         socket.join(this.id)
+        io.to(this.id).emit("playerJoin", username)
         this.positions[username] = {
             location: location
         }
@@ -36,8 +37,16 @@ class Game {
         }
     }
 
-    updatePositions() {
-        io.to(this.id).emit("updatePositions", this.positions)
+    updateAllPositions() {
+        io.in(this.id).emit("updatePositions", this.positions)
+    }
+
+    updatePosition(socket: Socket<ServerToClientEvents, ClientToServerEvents>) {
+        const username = socketUsernames.get(socket.id)
+        if (!username) return
+        if (!this.positions[username]) return
+
+        io.in(this.id).emit("playerMove", username, this.positions[username])
     }
 
     getPositions() {
@@ -90,13 +99,14 @@ function printUI() {
 io.on("connection", (socket) => {
     console.log("A user connected")
 
-    socket.on("create", (callback) => {
+    socket.on("create", (location, callback) => {
         const username = socketUsernames.get(socket.id)
-        if (!username) return callback(true)
+        if (!username) return callback("No username")
+        if (Game.getPlayersGame(socket.id)?.[0]) return callback("Already in game")
 
         const id = generateId()
         games[id] = new Game(id)
-        socket.join(id)
+        games[id].add(socket, location)
         callback(false, id)
         printUI()
     })
@@ -111,31 +121,32 @@ io.on("connection", (socket) => {
         callback(valid)
     })
 
-    socket.on("join", (id, callback) => {
+    socket.on("join", (id, location, callback) => {
         const username = socketUsernames.get(id)
-        if (!username) return callback(true)
+        if (!username) return callback("No username")
+        if (Game.getPlayersGame(socket.id)?.[0]) return callback("Already in game")
         const game = games[id]
-        if (!game) return callback(true)
-        if (game.clients.has(socket.id)) return callback(true)
-        socket.join(game.id)
-        io.to(game.id).emit("playerJoin", username)
+        if (!game) return callback("Invalid game")
+        if (game.clients.has(socket.id)) return callback("Already in this game")
+
+        game.add(socket, location)
         callback(false, game.positions)
     })
 
     socket.on("move", (location) => {
         if (!socketUsernames.get(socket.id)) return
-        const [game] = Game.getPlayersGame(socket.id)
+        const game = Game.getPlayersGame(socket.id)?.[0]
         if (!game) return
 
         game.updatePos(socket.id, location)
-        game.updatePositions()
+        game.updateAllPositions()
     })
 
     socket.on("disconnect", () => {
         socketUsernames.delete(socket.id)
 
         // Remove player form game
-        const [game] = Game.getPlayersGame(socket.id)
+        const game = Game.getPlayersGame(socket.id)?.[0]
         if (!game) return
         const username = socketUsernames.get(socket.id)
         if (!username) return
