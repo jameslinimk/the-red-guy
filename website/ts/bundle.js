@@ -6822,11 +6822,14 @@ const otherPlayer_1 = require("./otherPlayer");
 class Client {
     game;
     io;
+    latency;
     constructor(game) {
         this.game = game;
         this.io = (0, socket_io_client_1.io)("http://localhost:3000");
         this.io.on("playerJoin", (username) => {
             console.log("Other player joined", username);
+            if (game.username === username)
+                return;
             game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(game, game.spawnLocation);
         });
         this.io.on("playerLeave", (username) => {
@@ -6834,15 +6837,24 @@ class Client {
             delete game.otherPlayers[username];
         });
         this.io.on("updatePositions", (positions) => {
-            console.log("Updated positions", positions, " username:", this.game.username);
+            console.log("Updated positions", positions, " username:", this.game.username, " otherplayers:", this.game.otherPlayers);
             for (const username in positions) {
-                if (username === this.game.username)
+                if (username === this.game.username) {
                     this.game.player.hitbox.center = positions[username].location;
+                    continue;
+                }
                 if (!game.otherPlayers[username])
                     game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(game, game.spawnLocation);
                 game.otherPlayers[username].image.center = positions[username].location;
             }
         });
+        setInterval(() => {
+            const start = Date.now();
+            this.io.volatile.emit("ping", () => {
+                this.latency = Date.now() - start;
+                console.log("Latency", this.latency);
+            });
+        }, 5000);
     }
     setUsername() {
         const username = prompt("username?");
@@ -6873,8 +6885,10 @@ class Client {
                 return;
             this.game.gameId = id;
             for (const username in positions) {
-                if (username === this.game.username)
+                if (username === this.game.username) {
                     this.game.player.hitbox.center = positions[username].location;
+                    continue;
+                }
                 if (!this.game.otherPlayers[username])
                     this.game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(this.game, this.game.spawnLocation);
                 this.game.otherPlayers[username].image.center = positions[username].location;

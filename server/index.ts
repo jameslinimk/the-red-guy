@@ -18,7 +18,7 @@ class Game {
     add(socket: Socket<ServerToClientEvents, ClientToServerEvents>, location: Vector2) {
         const username = socketUsernames.get(socket.id)
         if (!username) return
-        console.log(this.clients, "clients")
+        log.push(this.clients, "clients")
         if (this.clients?.has(socket.id)) return
 
         socket.join(this.id)
@@ -93,19 +93,27 @@ function printUI() {
         return {
             "ID": game.id,
             "Clients": Array.from(game.clients.values()).map(client => socketUsernames.get(client)),
-            "Positions": Object.keys(game.positions).map(key => `${key}: ${game.positions[key].location.x}, ${game.positions[key].location.y}`)
+            "Positions": Object.keys(game.positions).map(key => `${key}: ${Math.round(game.positions[key].location.x)}, ${Math.round(game.positions[key].location.y)}`)
         }
     }))
 
     console.log("Socket username map:")
     console.table(socketUsernames)
+
+    console.log("Log:")
+    console.log(log.join("\n"))
 }
+const log = []
 printUI()
 
 /* ----------------------------- Username check ----------------------------- */
 
 io.on("connection", (socket) => {
-    console.log("A user connected")
+    log.push("A user connected")
+
+    socket.on("ping", (callback) => {
+        callback()
+    })
 
     socket.on("create", (location, callback) => {
         const username = socketUsernames.get(socket.id)
@@ -117,7 +125,7 @@ io.on("connection", (socket) => {
         games[id].add(socket, location)
         callback(false, id)
 
-        console.log("Created")
+        log.push("Created")
         printUI()
     })
 
@@ -136,7 +144,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on("join", (id, location, callback) => {
-        console.log("join ", id, location)
+        log.push("join ", id, location)
 
         const username = socketUsernames.get(socket.id)
         if (!username) return callback("No username")
@@ -162,21 +170,32 @@ io.on("connection", (socket) => {
         printUI()
     })
 
-    socket.on("disconnect", () => {
+    const disconnect = () => {
+        log.push(`Disconnect ${socketUsernames.get(socket.id)}`)
         socketUsernames.delete(socket.id)
 
         // Remove player form game
         const game = Game.getPlayersGame(socket.id)?.[0]
         if (!game) return
+        log.push(" - Game found")
         const username = socketUsernames.get(socket.id)
         if (!username) return
+        log.push(" - Username found")
         usernames.delete(username)
-        io.to(game.id).emit("playerLeave", username)
+        log.push(' - Deleted username')
+        log.push(" - About to socket.leave", game.clients)
         socket.leave(game.id)
+        log.push(" - Socket.leave", game.clients)
+        io.to(game.id).emit("playerLeave", username)
+        log.push(" - Emitted leave")
+        log.push(" - About to delete position", game.positions)
         delete game.positions[socket.id]
+        log.push(" - Deleted position", game.positions)
 
-        console.log("Deleted everything")
+        log.push(" - Done deleting")
 
-        printUI()
-    })
+        // printUI()
+    }
+
+    socket.on("disconnect", disconnect)
 })

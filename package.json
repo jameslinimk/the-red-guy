@@ -9,7 +9,9 @@
     "tsc": "cd website/ts & tsc",
     "watch": "watchify ./website/ts/index.js -o ./website/ts/bundle.js",
     "minify": "uglifyjs ./website/ts/bundle.js > ./website/ts/bundle.min.js --compress",
-    "uglify": "uglifyjs ./website/ts/bundle.js > ./website/ts/bundle.min.js -m --mangle-props --compress"
+    "uglify": "uglifyjs ./website/ts/bundle.js > ./website/ts/bundle.min.js -m --mangle-props --compress",
+    "tscExpress": "tsc",
+    "express": "nodemon website"
   },
   "author": "Linimik",
   "license": "ISC",

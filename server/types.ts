@@ -15,6 +15,7 @@ interface ClientToServerEvents {
     move: (location: Vector2) => void
     checkUsername: (username: string, callback: (valid: boolean) => void) => void
     setUsername: (username: string, callback: (valid: boolean) => void) => void
+    ping: (callback: () => void) => void
 }
 interface InterServerEvents { ping: () => void }
 interface SocketData { name: string, age: number }

@@ -6,3 +6,4 @@ node_modules
 *.js.map
 !website/ts/bundle.js
 !website/ts/bundle.min.js
+ngrok.exe
