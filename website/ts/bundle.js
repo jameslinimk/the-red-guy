@@ -6826,15 +6826,18 @@ class Client {
         this.game = game;
         this.io = (0, socket_io_client_1.io)("http://localhost:3000");
         this.io.on("playerJoin", (username) => {
+            console.log("Other player joined", username);
             game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(game, game.spawnLocation);
         });
         this.io.on("playerLeave", (username) => {
+            console.log("Player left ", username);
             delete game.otherPlayers[username];
         });
         this.io.on("updatePositions", (positions) => {
+            console.log("Updated positions", positions, " username:", this.game.username);
             for (const username in positions) {
-                if (username === game.username)
-                    continue;
+                if (username === this.game.username)
+                    this.game.player.hitbox.center = positions[username].location;
                 if (!game.otherPlayers[username])
                     game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(game, game.spawnLocation);
                 game.otherPlayers[username].image.center = positions[username].location;
@@ -6844,29 +6847,34 @@ class Client {
     setUsername() {
         const username = prompt("username?");
         this.io.emit("setUsername", username, (valid) => {
-            if (valid)
+            if (valid) {
                 this.game.username = username;
+                console.log("Set username to", username);
+            }
         });
     }
     createGame() {
-        this.io.emit("create", (error, id) => {
+        this.io.emit("create", this.game.spawnLocation, (error, id) => {
             if (error)
                 return;
             this.game.gameId = id;
+            console.log("Created and joined game with id", id);
+            this.game.player.hitbox.center = this.game.spawnLocation;
         });
     }
     update(location) {
         this.io.emit("move", location);
+        console.log("Emitted move to server", location);
     }
     join(id) {
-        this.io.emit("join", id, (error, positions) => {
-            console.log(id, error, positions);
-            if (!error)
+        this.io.emit("join", id, this.game.spawnLocation, (error, positions) => {
+            console.log("Joining game with id", id, " error:", error, " positions:", positions);
+            if (error)
                 return;
             this.game.gameId = id;
             for (const username in positions) {
                 if (username === this.game.username)
-                    continue;
+                    this.game.player.hitbox.center = positions[username].location;
                 if (!this.game.otherPlayers[username])
                     this.game.otherPlayers[username] = new otherPlayer_1.OtherPlayer(this.game, this.game.spawnLocation);
                 this.game.otherPlayers[username].image.center = positions[username].location;
@@ -7072,7 +7080,8 @@ class Player {
             this.hitbox.center.x += this.hspd;
         if (!vTouches)
             this.hitbox.center.y += this.vspd;
-        this.game.client.update(this.hitbox.center);
+        if (this.game.gameId && (this.hspd !== 0 || this.vspd !== 0))
+            this.game.client.update(this.hitbox.center);
     }
     draw() {
         this.game.CGame.drawRect(this.image);

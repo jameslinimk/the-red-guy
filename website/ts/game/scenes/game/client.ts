@@ -11,7 +11,7 @@ class Client {
         this.io = io("http://localhost:3000")
 
         this.io.on("playerJoin", (username) => {
-            console.log("Other player joined ", username)
+            console.log("Other player joined", username)
             game.otherPlayers[username] = new OtherPlayer(game, game.spawnLocation)
         })
 
@@ -21,7 +21,7 @@ class Client {
         })
 
         this.io.on("updatePositions", (positions) => {
-            console.log("Updated positions ", positions)
+            console.log("Updated positions", positions, " username:", this.game.username)
             for (const username in positions) {
                 if (username === this.game.username) this.game.player.hitbox.center = positions[username].location
                 if (!game.otherPlayers[username]) game.otherPlayers[username] = new OtherPlayer(game, game.spawnLocation)
@@ -35,7 +35,7 @@ class Client {
         this.io.emit("setUsername", username, (valid) => {
             if (valid) {
                 this.game.username = username
-                console.log("Set username to ", username)
+                console.log("Set username to", username)
             }
         })
     }
@@ -44,20 +44,20 @@ class Client {
         this.io.emit("create", this.game.spawnLocation, (error, id) => {
             if (error) return
             this.game.gameId = id
-            console.log("Created and joined game with id ", id)
+            console.log("Created and joined game with id", id)
             this.game.player.hitbox.center = this.game.spawnLocation
         })
     }
 
     update(location: Vector2) {
         this.io.emit("move", location)
-        console.log("Emitted move to server ", location)
+        console.log("Emitted move to server", location)
     }
 
     join(id: string) {
         this.io.emit("join", id, this.game.spawnLocation, (error, positions) => {
-            console.log("Joining game with id ", id, "error: ", error, " positions: ", positions)
-            if (!error) return
+            console.log("Joining game with id", id, " error:", error, " positions:", positions)
+            if (error) return
             this.game.gameId = id
             for (const username in positions) {
                 if (username === this.game.username) this.game.player.hitbox.center = positions[username].location

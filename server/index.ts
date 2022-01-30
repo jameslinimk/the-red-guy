@@ -7,7 +7,7 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEve
 /* ---------------------------------- Game ---------------------------------- */
 class Game {
     get clients() {
-        return io.sockets.adapter.rooms.get(this.id)
+        return (io.sockets.adapter.rooms.get(this.id)) ? io.sockets.adapter.rooms.get(this.id) : new Set<string>()
     }
     positions: { [key: string]: position }
 
@@ -18,7 +18,8 @@ class Game {
     add(socket: Socket<ServerToClientEvents, ClientToServerEvents>, location: Vector2) {
         const username = socketUsernames.get(socket.id)
         if (!username) return
-        if (this.clients.has(socket.id)) return
+        console.log(this.clients, "clients")
+        if (this.clients?.has(socket.id)) return
 
         socket.join(this.id)
         io.to(this.id).emit("playerJoin", username)
@@ -67,6 +68,7 @@ function usernameCheck(username: string) {
     if (usernames.has(username)) return false
     if (username.length > 20) return false
     if (/\s/g.test(username)) return false
+    usernames.add(username)
     return true
 }
 
@@ -86,13 +88,19 @@ function generateId() {
 /* ----------------------------------- UI ----------------------------------- */
 function printUI() {
     console.clear()
+    console.log("Games:")
     console.table(Object.values(games).map(game => {
         return {
             "ID": game.id,
-            "Clients": game.clients,
+            "Clients": Array.from(game.clients.values()).map(client => socketUsernames.get(client)),
+            "Positions": Object.keys(game.positions).map(key => `${key}: ${game.positions[key].location.x}, ${game.positions[key].location.y}`)
         }
     }))
+
+    console.log("Socket username map:")
+    console.table(socketUsernames)
 }
+printUI()
 
 /* ----------------------------- Username check ----------------------------- */
 
@@ -108,21 +116,29 @@ io.on("connection", (socket) => {
         games[id] = new Game(id)
         games[id].add(socket, location)
         callback(false, id)
+
+        console.log("Created")
         printUI()
     })
 
     socket.on("checkUsername", (username, callback) => {
         callback(usernameCheck(username))
+
+        printUI()
     })
 
     socket.on("setUsername", (username, callback) => {
         const valid = usernameCheck(username)
         if (valid) socketUsernames.set(socket.id, username)
         callback(valid)
+
+        printUI()
     })
 
     socket.on("join", (id, location, callback) => {
-        const username = socketUsernames.get(id)
+        console.log("join ", id, location)
+
+        const username = socketUsernames.get(socket.id)
         if (!username) return callback("No username")
         if (Game.getPlayersGame(socket.id)?.[0]) return callback("Already in game")
         const game = games[id]
@@ -131,6 +147,8 @@ io.on("connection", (socket) => {
 
         game.add(socket, location)
         callback(false, game.positions)
+
+        printUI()
     })
 
     socket.on("move", (location) => {
@@ -140,6 +158,8 @@ io.on("connection", (socket) => {
 
         game.updatePos(socket.id, location)
         game.updateAllPositions()
+
+        printUI()
     })
 
     socket.on("disconnect", () => {
@@ -150,10 +170,13 @@ io.on("connection", (socket) => {
         if (!game) return
         const username = socketUsernames.get(socket.id)
         if (!username) return
+        usernames.delete(username)
         io.to(game.id).emit("playerLeave", username)
         socket.leave(game.id)
         delete game.positions[socket.id]
+
+        console.log("Deleted everything")
+
+        printUI()
     })
 })
-
-console.log("Starting server")

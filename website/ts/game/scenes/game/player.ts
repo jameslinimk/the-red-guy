@@ -124,7 +124,7 @@ class Player {
         if (!hTouches) this.hitbox.center.x += this.hspd
         if (!vTouches) this.hitbox.center.y += this.vspd
 
-        this.game.client.update(this.hitbox.center)
+        if (this.game.gameId && (this.hspd !== 0 || this.vspd !== 0)) this.game.client.update(this.hitbox.center)
     }
 
     draw() {
