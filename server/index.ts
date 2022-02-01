@@ -65,9 +65,9 @@ const games: { [key: string]: Game } = {}
 const usernames = new Set<string>()
 const socketUsernames = new Map<string, string>()
 function usernameCheck(username: string) {
-    if (usernames.has(username)) return false
-    if (username.length > 20) return false
-    if (/\s/g.test(username)) return false
+    if (usernames.has(username)) return "Username taken"
+    if (username.length > 20) return "Username too long"
+    if (/\s/g.test(username)) return "Username contains spaces"
     usernames.add(username)
     return true
 }
@@ -113,6 +113,7 @@ io.on("connection", (socket) => {
 
     socket.on("ping", (callback) => {
         callback()
+        printUI()
     })
 
     socket.on("create", (location, callback) => {
@@ -124,22 +125,21 @@ io.on("connection", (socket) => {
         games[id] = new Game(id)
         games[id].add(socket, location)
         callback(false, id)
+        log.push("Created new game with id of", id)
 
-        log.push("Created")
         printUI()
     })
 
     socket.on("checkUsername", (username, callback) => {
-        callback(usernameCheck(username))
-
+        const valid = usernameCheck(username)
+        callback((valid === true) ? false : valid)
         printUI()
     })
 
     socket.on("setUsername", (username, callback) => {
         const valid = usernameCheck(username)
         if (valid) socketUsernames.set(socket.id, username)
-        callback(valid)
-
+        callback((valid === true) ? false : valid)
         printUI()
     })
 
@@ -194,7 +194,7 @@ io.on("connection", (socket) => {
 
         log.push(" - Done deleting")
 
-        // printUI()
+        printUI()
     }
 
     socket.on("disconnect", disconnect)
