@@ -6,15 +6,25 @@ import { OtherPlayer } from "./otherPlayer"
 import { Player } from "./player"
 import { Wall } from "./wall"
 
+interface ChatMessage {
+    sentAt: Date
+    message: string
+    author: string
+}
 class GameScene extends BaseScene {
     /* ---------------------------- Objects / sprites --------------------------- */
     player: Player
     otherPlayers: { [key: string]: OtherPlayer }
     walls: Wall[]
+
+    chat: ChatMessage[]
+
+    /* ---------------------------- Multiplayer stuff --------------------------- */
     client: Client
     username?: string
     gameId?: string
 
+    /* -------------------------------- Constants ------------------------------- */
     spawnLocation: Vector2
 
     constructor(CGame: _CGame) {
@@ -30,6 +40,7 @@ class GameScene extends BaseScene {
             new Wall(this, { x: this.CGame.width / 2 - 100, y: this.CGame.height - 150 }, 50, 100)
         ]
         this.otherPlayers = {}
+        this.chat = []
     }
 
     processInput(events: Events, pressedKeys: PressedKeys, dt: number) {

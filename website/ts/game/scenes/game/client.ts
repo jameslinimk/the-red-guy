@@ -9,7 +9,7 @@ class Client {
     latency: number
 
     constructor(public game: GameScene) {
-        this.io = io("http://7584-64-18-147-14.ngrok.io/")
+        this.io = io("http://localhost:3000")
 
         this.io.on("playerJoin", (username) => {
             console.log("Other player joined", username)
